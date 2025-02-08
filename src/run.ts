@@ -103,7 +103,7 @@ ${followUpQuestions.map((q, i) => `Q: ${q}\nA: ${answers[i]}`).join('\n')}
    * 
    * 2. For each query:
    *    - Uses Firecrawl API to search web content (max 5 results/query)
-   *    - Rate limited to 2 concurrent requests
+   *    - Rate limited to 1 concurrent requests
    *    - 15-second timeout per search
    * 
    * 3. Processes results (processSerpResult):

@@ -2,16 +2,35 @@ import { createOpenAI, type OpenAIProviderSettings } from '@ai-sdk/openai';
 import { getEncoding } from 'js-tiktoken';
 
 import { RecursiveCharacterTextSplitter } from './text-splitter';
+import { withExponentialBackoff } from './retry';
 
 interface CustomOpenAIProviderSettings extends OpenAIProviderSettings {
   baseURL?: string;
 }
 
-// Providers
-const openai = createOpenAI({
+// Create base provider
+const baseProvider = createOpenAI({
   apiKey: process.env.OPENAI_KEY!,
   baseURL: process.env.OPENAI_ENDPOINT || 'https://api.openai.com/v1',
 } as CustomOpenAIProviderSettings);
+
+// Create wrapped provider that retries on rate limits
+const openai = (model: string, options?: any) => {
+  const provider = baseProvider(model, options);
+  const wrapped = provider;
+
+  // Wrap the original doGenerate method
+  const originalDoGenerate = wrapped.doGenerate.bind(wrapped);
+  wrapped.doGenerate = async function(input: any) {
+    try {
+      return await withExponentialBackoff(() => originalDoGenerate(input));
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  return wrapped;
+};
 
 const isCustomEndpoint =
   process.env.OPENAI_ENDPOINT &&
@@ -19,11 +38,10 @@ const isCustomEndpoint =
 const customModel = process.env.OPENAI_MODEL;
 
 // Models
-
 export const o3MiniModel = openai(
-  isCustomEndpoint && customModel ? customModel : 'o3-mini',
+  isCustomEndpoint && customModel ? customModel : 'gpt-4o',
   {
-    reasoningEffort: 'medium',
+    // reasoningEffort: 'medium',
     structuredOutputs: true,
   },
 );

@@ -13,7 +13,7 @@ type ResearchResult = {
 };
 
 // increase this if you have higher API rate limits
-const ConcurrencyLimit = 2;
+const ConcurrencyLimit = 1;
 
 // Initialize Firecrawl with optional API key and optional base url
 
